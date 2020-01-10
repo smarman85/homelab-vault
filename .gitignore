@@ -1,0 +1,4 @@
+.env
+consul-volume/
+vault-volume/
+

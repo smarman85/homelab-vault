@@ -1,0 +1,28 @@
+{
+  "datacenter": "dc1",
+  "data_dir": "/consul/data",
+  "domain": "consul",
+  "client_addr": "0.0.0.0",
+  "bind_addr": "0.0.0.0",
+  "log_level": "DEBUG",
+  "server": true,
+  "bootstrap": true,
+  "encrypt": "xxxxxxxxxxxxxxxxxx",
+  "ui": true,
+  "leave_on_terminate": true,
+  "encrypt_verify_incoming": true,
+  "encrypt_verify_outgoing": true,
+  "ports": {
+    "dns": 53,
+    "https": 8501
+  },
+  "connect": {
+    "enabled": true
+  },
+  "acl": {
+    "enabled": true,
+    "default_policy": "deny",
+    "enable_token_persistence": true
+  }
+}
+

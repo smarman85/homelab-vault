@@ -1,0 +1,16 @@
+{
+  "datacenter": "dc1",
+  "data_dir": "/consul/data",
+  "domain": "consul",
+  "client_addr": "0.0.0.0",
+  "bind_addr": "BIND_ADDR",
+  "log_level": "DEBUG",
+  "server": true,
+  "bootstrap": true,
+  "encrypt": "xxxxxxxxxxxxx",
+  "ui": true,
+  "leave_on_terminate": true,
+  "encrypt_verify_incoming": true,
+  "encrypt_verify_outgoing": true
+}
+
