@@ -7,7 +7,7 @@
   "log_level": "DEBUG",
   "server": true,
   "bootstrap": true,
-  "encrypt": "xxxxxxxxxxxxxxxxxx",
+  "encrypt": "< ENCRYPT TOKEN >",
   "ui": true,
   "leave_on_terminate": true,
   "encrypt_verify_incoming": true,

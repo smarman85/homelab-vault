@@ -3,14 +3,16 @@
     "consul": {
       "address": "consul:8500",
       "path": "vault/",
-      "token": "CONSUL_ACL_TOKEN"
+      "token": "< CONSUL ACL TOKEN>"
     }
   },
   "listener": {
     "tcp":{
       "address": "0.0.0.0:8200",
       "cluster_address": "0.0.0.0:8201",
-      "tls_disable": 1
+      "tls_cert_file": "/var/config/tls-cert.pem",
+      "tls_key_file": "/var/config/tls-key.key",
+      "tls_disable": "true"
     }
   },
   "ui": true,

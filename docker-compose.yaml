@@ -3,17 +3,30 @@ version: '3'
 services:
   traefik:
     # The official v2.0 Traefik docker image
-    image: traefik:v2.0
+    image: traefik:v2.1
+    container_name: "traefik"
     # Enables the web UI and tells Traefik to listen to docker
-    command: --api.insecure=true --providers.docker
+    command: 
+      #- "--log.level=DEBUG"
+      - "--log.level=ERROR"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      #- "--providers.docker.exposedbydefault=false"
+      #- "--entrypoints.vault.address=:443"
+      #- "--entrypoints.consul.address=:444"
+      #- "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      #- "--certificatesresolvers.myresolver.acme.email=seanmarman@gmail.com"
+      #- "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       # The HTTP port
       - "80:80"
+      - "443:443"
       # The Web UI (enabled by --api.insecure=true)
       - "8080:8080"
     volumes:
-      # So that Traefik can listen to the Docker events
-      - /var/run/docker.sock:/var/run/docker.sock
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   consul:
     build: 
@@ -26,28 +39,39 @@ services:
         #    networks:
         #      - consul-network
     restart: always
-    ports: 
-      - "8300"
-      - "8301"
-      - "8302"
-      - "8500"
-      - "8600"
+    labels:
+      #- "traefik.http.routers.vault.rule=Host(`consul.docker.localhost`)"
+      - "traefik.http.routers.consul.rule=Host(`consul.local.seanhome.xyz`)"
+      - "traefik.http.services.consul.loadbalancer.server.port=8500"
+      #- "traefik.http.routers.consul.entrypoints=consul"
+      #- "traefik.http.routers.consul.tls.certresolver=myresolver"
+      #- "traefik.http.services.consul.loadbalancer.server.scheme=https"
+    #ports: 
+    #  - "8300"
+    #  - "8301"
+    #  - "8302"
+    #  - "8500"
+    #  - "8600"
 
   vault:
     build:
       context: ./vault/
       dockerfile: Dockerfile
     container_name: vault
-    ports:
-      - "8200"
-      - "8302"
-      - "8500"
-      - "8600"
+    #ports:
+    #  - "8200"
+    #  - "8302"
+    #  - "8500"
+    #  - "8600"
     restart: always
     cap_add:
       - IPC_LOCK
     volumes:
       - "./vault-volume:/vault/data/"
     labels:
-      - "traefik.http.routers.vault.rule=Host(`vault.docker.localhost`)"
+      #- "traefik.http.routers.vault.rule=Host(`vault.docker.localhost`)"
+      - "traefik.http.routers.vault.rule=Host(`vault.local.seanhome.xyz`)"
       - "traefik.http.services.vault.loadbalancer.server.port=8200"
+      #- "traefik.http.routers.vault.entrypoints=vault"
+      #- "traefik.http.routers.vault.tls.certresolver=myresolver"
+      #- "traefik.http.services.vault.loadbalancer.server.scheme=https"

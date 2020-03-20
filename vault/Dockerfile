@@ -31,6 +31,8 @@ RUN set -eux; \
 
 COPY ./config/vault-config.json /vault/config/vault-config.json
 COPY ./config/consul-config.json /var/consul.json
+COPY ./certs/cert.pem /var/config/tls-cert.pem
+COPY ./certs/seanhome.xyz.key /var/config/tls-key.key
 
 # /vault/logs is made available to use as a location to store audit logs, if
 # desired; /vault/file is made available to use as a location with the file
