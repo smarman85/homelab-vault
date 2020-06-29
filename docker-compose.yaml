@@ -28,6 +28,51 @@ services:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
+  drone-server:
+    #image: drone/drone:1.6.5
+    image: drone/drone:1
+    container_name: drone-server
+    restart: always
+    depends_on:
+      - traefik
+    environment:
+      - DRONE_AGENTS_ENABLED=true
+      - DRONE_GITHUB_CLIENT_ID=${CLIENT_ID}
+      - DRONE_GITHUB_CLIENT_SECRET=${CLIENT_SECRET}
+      - DRONE_RPC_SECRET=${SHARED_SECRET}
+      - DRONE_SERVER_HOST=drone-server.local.seanhome.xyz
+      - DRONE_GITHUB_SKIP_VERIFY=true
+      - DRONE_SERVER_PROTO=http
+      - DRONE_USER_CREATE=username:droneadm,machine:false,admin:true
+    volumes:
+      - "./drone:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.http.routers.drone-server.rule=Host(`drone-server.local.seanhome.xyz`)"
+      - "traefik.http.services.drone-server.loadbalancer.server.port=80"
+
+  drone-runner:
+    #image: drone/drone-runner-docker:1.2.1
+    image: drone/drone-runner-docker:1
+    container_name: drone-runner
+    depends_on:
+      - drone-server
+    restart: always
+    environment:
+      - DRONE_RPC_SECRET=${SHARED_SECRET}
+      - DRONE_RPC_SKIP_VERIFY=true
+      - DRONE_RPC_HOST=drone-server.local.seanhome.xyz
+      - DRONE_RPC_PROTO=http
+      - DRONE_RUNNER_CAPACITY=2
+    #ports:
+    #  - 3000:3000
+    labels:
+      - "traefik.http.routers.drone-runner.rule=Host(`drone-runner.local.seanhome.xyz`)"
+      - "traefik.http.services.drone-runner.loadbalancer.server.port=3000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    
+
   consul:
     build: 
       context: ./consul/
@@ -75,3 +120,24 @@ services:
       #- "traefik.http.routers.vault.entrypoints=vault"
       #- "traefik.http.routers.vault.tls.certresolver=myresolver"
       #- "traefik.http.services.vault.loadbalancer.server.scheme=https"
+      
+  goapi:
+    container_name: goapi
+    image: "smarman/ubuntudev:0.1.7"
+    volumes:
+      - ./golang:/srv
+    command: ["tail", "-f", "/dev/null"]
+    labels:
+      - "traefik.http.routers.goapi.rule=Host(`goapi.local.seanhome.xyz`)"
+      - "traefik.http.services.goapi.loadbalancer.server.port=8090"
+
+  database:
+    container_name: postgres
+    image: "postgres"
+    env_file:
+      - psql.env
+    volumes:
+      - ./clubdata.sql:/docker-entrypoint-initdb.d/clubdata.sql
+    labels:
+      - "traefik.http.routers.psql.rule=Host(`psql.local.seanhome.xyz`)"
+      - "traefik.http.services.psql.loadbalancer.server.port=5432"

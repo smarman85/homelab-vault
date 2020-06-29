@@ -5,3 +5,4 @@ consul-volume/
 vault-volume/
 letsencrypt/
 /vault/certs/
+drone/
