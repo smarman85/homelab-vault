@@ -4,6 +4,7 @@ import (
 	"database/sql"
   "github.com/joho/godotenv"
   "github.com/gorilla/mux"
+  "github.com/gorilla/sessions"
   "encoding/json"
 	"fmt"
 	"log"
@@ -11,6 +12,12 @@ import (
   "net/http"
 
 	_ "github.com/lib/pq"
+)
+
+var (
+  // key must be 16, 24 or 32 bytes long (AES-128, AES-192 or AES-256)
+  key = []byte("super-secret-key")
+  store = sessions.NewCookieStore(key)
 )
 
 type userInfo struct {
@@ -23,6 +30,12 @@ type users struct {
   Users []userInfo
 }
 
+func login(w http.ResponseWriter, r *http.Request) {
+  session, _ := store.Get(r, "cookie-name")
+  // auth here
+  session.Values["authenticated"] = true
+  session.Save(r, w)
+}
 
 func dbConnection() string {
   // TODO fill this in directly or through environment variable
@@ -87,6 +100,14 @@ func queryUsers(userData *users) error {
 }
 
 func getUsers(w http.ResponseWriter, req *http.Request) {
+
+  session, _ := store.Get(req, "cookie-name")
+
+  if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+    http.Error(w, "Forbidden", http.StatusForbidden)
+    return
+  }
+
   userData := users{}
 
   err := queryUsers(&userData)
@@ -110,12 +131,6 @@ func main() {
   router := mux.NewRouter().StrictSlash(true)
   router.HandleFunc("/", homeLink)
   router.HandleFunc("/users", getUsers).Methods("GET")
+  router.HandleFunc("/login", login)
   log.Fatal(http.ListenAndServe(":8090", router))
 }
-
-
-
-
-
-
-
