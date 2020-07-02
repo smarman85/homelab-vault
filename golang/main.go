@@ -13,11 +13,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type User struct {
+type userInfo struct {
 	ID       int
 	Email    string
 	Password string
 }
+
+type users struct {
+  Users []userInfo
+}
+
 
 func dbConnection() string {
   // TODO fill this in directly or through environment variable
@@ -47,25 +52,58 @@ func homeLink(w http.ResponseWriter, r *http.Request) {
   fmt.Fprint(w, "Welcome to our homepage")
 }
 
-func getUsers(w http.ResponseWriter, r *http.Request) {
+func queryUsers(userData *users) error {
   DB_DSN := dbConnection()
 	// Create DB pool
 	db, err := sql.Open("postgres", DB_DSN)
 	if err != nil {
 		log.Fatal("Failed to open a DB connection: ", err)
 	}
-	defer db.Close()
-	// Create an empty user and make the sql query (using $1 for the parameter)
-	var myUser User
-	userSql := "SELECT id, email, password FROM users WHERE id = $1"
 
-  err = db.QueryRow(userSql, 1).Scan(&myUser.ID, &myUser.Email, &myUser.Password)
-	if err != nil {
-		log.Fatal("Failed to execute query: ", err)
-	}
-  w.Header().Set("Content-Type", "application/json")
-  json.NewEncoder(w).Encode(myUser)
-  //fmt.Fprint(w, "Hi " + myUser.Email + " welcome back!\n", )
+  rows, err := db.Query(`SELECT id, email, password FROM users`)
+  if err != nil {
+    return err
+  }
+  defer db.Close()
+
+  for rows.Next() {
+    user := userInfo{}
+    err := rows.Scan(
+      &user.ID,
+      &user.Email,
+      &user.Password,
+    )
+    if err != nil {
+      return err
+    }
+    userData.Users = append(userData.Users, user)
+  }
+  err = rows.Err()
+  if err != nil {
+    return err
+  }
+  return nil
+
+}
+
+func getUsers(w http.ResponseWriter, req *http.Request) {
+  userData := users{}
+
+  err := queryUsers(&userData)
+  if err != nil {
+    http.Error(w, err.Error(), 500)
+    return
+  }
+
+  out, err := json.Marshal(userData)
+  if err != nil {
+    http.Error(w, err.Error(), 500)
+    return
+  }
+
+  fmt.Fprintf(w, string(out))
+  //w.Header().Set("Content-Type", "application/json")
+  //json.NewEncoder(w).Encode(string(out))
 }
 
 func main() {
@@ -74,3 +112,10 @@ func main() {
   router.HandleFunc("/users", getUsers).Methods("GET")
   log.Fatal(http.ListenAndServe(":8090", router))
 }
+
+
+
+
+
+
+
